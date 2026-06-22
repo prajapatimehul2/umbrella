@@ -64,4 +64,4 @@ jobs:
             -o StrictHostKeyChecking=accept-new \
             -o ConnectTimeout=20 \
             "${EC2_USER}@${EC2_HOST}" \
-            "sudo BRANCH=main bash /opt/umbrella-app/deploy/redeploy.sh"
+            "sudo bash /opt/umbrella-app/deploy/redeploy.sh"
