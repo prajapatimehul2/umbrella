@@ -45,22 +45,23 @@ jobs:
       group: deploy-production
       cancel-in-progress: false
     steps:
-      - name: Set up SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -p "${EC2_PORT:-22}" -H "$EC2_HOST" >> ~/.ssh/known_hosts 2>/dev/null
-        env:
-          EC2_HOST: ${{ secrets.EC2_HOST }}
-          EC2_PORT: ${{ secrets.EC2_PORT }}
-
-      - name: Run redeploy on EC2
-        run: |
-          ssh -i ~/.ssh/deploy_key -p "${EC2_PORT:-22}" \
-            "${EC2_USER}@${EC2_HOST}" \
-            "sudo BRANCH=main bash /opt/umbrella-app/deploy/redeploy.sh"
+      - name: Deploy to EC2 over SSH
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
           EC2_USER: ${{ secrets.EC2_USER }}
           EC2_PORT: ${{ secrets.EC2_PORT }}
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          PORT="${EC2_PORT:-22}"
+          mkdir -p ~/.ssh
+          printf '%s\n' "$EC2_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          # Best-effort host-key pinning; if the scan can't reach the box we fall
+          # back to accept-new on the real connection rather than hard-failing here.
+          ssh-keyscan -p "$PORT" -H "$EC2_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          ssh -i ~/.ssh/deploy_key -p "$PORT" \
+            -o StrictHostKeyChecking=accept-new \
+            -o ConnectTimeout=20 \
+            "${EC2_USER}@${EC2_HOST}" \
+            "sudo BRANCH=main bash /opt/umbrella-app/deploy/redeploy.sh"
