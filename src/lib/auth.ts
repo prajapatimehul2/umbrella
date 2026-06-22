@@ -58,7 +58,10 @@ export async function createSession(userId: number): Promise<void> {
   const token = sign({ userId, exp });
   (await cookies()).set(COOKIE, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    // Only mark the cookie Secure when the app is actually served over HTTPS —
+    // browsers drop Secure cookies on plain-HTTP connections, which silently
+    // breaks login. Set COOKIE_SECURE=true once TLS is in front of the app.
+    secure: process.env.COOKIE_SECURE === "true",
     sameSite: "lax",
     path: "/",
     maxAge: MAX_AGE_S,
