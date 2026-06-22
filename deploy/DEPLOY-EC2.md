@@ -133,13 +133,13 @@ git push -u origin main
 ---
 
 ## Redeploying after code changes
+
+Use the redeploy script (pulls `main`, rebuilds, restarts, health-checks):
 ```bash
-cd /opt/umbrella-app
-git pull            # or rsync again
-npm ci
-npm run build
-sudo systemctl restart umbrella
+sudo bash /opt/umbrella-app/deploy/redeploy.sh
 ```
+This is the same script the CI/CD pipeline runs — see [CI-CD.md](CI-CD.md) to
+have GitHub Actions do it automatically on every push to `main`.
 
 ## Logs / troubleshooting
 ```bash
